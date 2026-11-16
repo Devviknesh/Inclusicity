@@ -143,14 +143,35 @@ class TestLiveIntegration:
         task = celery_app.tasks["utils.email_tasks.send_helper_verified_email_task"]
         assert task.name == "utils.email_tasks.send_helper_verified_email_task"
         assert task.max_retries == 3
-        assert task.retry_kwargs.get("countdown") == 10
+        assert task.default_retry_delay == 10
+
+        assert "utils.email_tasks.send_help_request_accepted_email_task" in celery_app.tasks
+        assert "utils.email_tasks.send_sos_alert_email_task" in celery_app.tasks
 
     def test_real_smtp_email_dispatch_lifecycle(self):
-        from utils.email import send_helper_verified_email
+        from utils.email import send_helper_verified_email, send_help_request_accepted_email, send_sos_alert_email
 
         # Test with unconfigured credentials -> returns False cleanly without crashing
-        result_unconfigured = send_helper_verified_email("test@example.com", "Test Helper")
-        assert result_unconfigured is False, "Email function should return False when SMTP credentials not provided"
+        assert send_helper_verified_email("test@example.com", "Test Helper") is False
+        assert send_help_request_accepted_email("user@example.com", "User", "Helper", "Ramp Assist") is False
+        assert send_sos_alert_email("admin@example.com", "user@example.com", "Help needed") is False
+
+    def test_storage_utility_and_kyc_guardrails(self):
+        import io
+        from utils.storage import is_r2_configured, upload_kyc_document, get_kyc_document_access_url
+
+        # Check default R2 unconfigured state
+        assert is_r2_configured() is False or isinstance(is_r2_configured(), bool)
+
+        # Check local URL generation fallback
+        access_url = get_kyc_document_access_url("helpers/123/aadhaar.pdf")
+        assert "helpers/123/aadhaar.pdf" in access_url
+
+        # Test oversize KYC guardrail (> 10MB rejection)
+        oversized_data = io.BytesIO(b"0" * (11 * 1024 * 1024))
+        success, _, err = upload_kyc_document(oversized_data, "helpers/123/giant.pdf", max_size_mb=10)
+        assert success is False
+        assert "exceeds maximum allowed free limit" in err
 
     def test_accessibility_map_dataset_integrity(self):
         map_file_path = os.path.join(

@@ -37,5 +37,7 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Production Gunicorn Eventlet Worker for Flask-SocketIO
-CMD ["sh", "-c", "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:${PORT} --access-logfile - --error-logfile - app:app"]
+RUN chmod +x /app/start.sh
+
+# Production startup (co-located Celery + Gunicorn with Eventlet for Flask-SocketIO)
+CMD ["bash", "start.sh"]

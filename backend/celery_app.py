@@ -24,6 +24,11 @@ celery_config = {
     "timezone": "UTC",
     "enable_utc": True,
     "broker_connection_retry_on_startup": True,
+    # Zero-cost & Upstash free-tier optimizations
+    "task_always_eager": os.getenv("CELERY_TASK_ALWAYS_EAGER", "False").lower() in ("true", "1"),
+    "result_expires": 3600,  # Expire task metadata after 1 hour to prevent Redis memory growth
+    "task_time_limit": 30,   # Prevent hung tasks on free containers
+    "task_soft_time_limit": 20,
 }
 
 # Upstash Redis TLS (rediss://) support

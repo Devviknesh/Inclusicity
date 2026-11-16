@@ -244,6 +244,23 @@ def accept_request(request_id):
         {"$set": {"available": False}}
     )
 
+    # Dispatch email notification to user regarding helper acceptance
+    try:
+        user_doc = db.users.find_one({"_id": req.get("user_id")})
+        if user_doc and user_doc.get("email"):
+            user_email = user_doc["email"]
+            user_name = user_doc.get("name", "User")
+            helper_name = helper.get("name", "A volunteer helper")
+            need = req.get("need", "Accessibility Assistance")
+            try:
+                from utils.email_tasks import send_help_request_accepted_email_task
+                send_help_request_accepted_email_task.delay(user_email, user_name, helper_name, need)
+            except Exception:
+                from utils.email import send_help_request_accepted_email
+                send_help_request_accepted_email(user_email, user_name, helper_name, need)
+    except Exception as e:
+        print("⚠️ Help request notification error:", e)
+
     return jsonify({"message": "Request accepted"}), 200
 
 

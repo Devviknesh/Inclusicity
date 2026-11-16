@@ -40,6 +40,20 @@ def create_sos():
     except Exception as e:
         print("⚠️ SocketIO SOS alert emission error:", e)
 
+    # Asynchronous email notification to administrator
+    import os
+    admin_email = os.getenv("ADMIN_EMAIL")
+    if admin_email:
+        try:
+            from utils.email_tasks import send_sos_alert_email_task
+            send_sos_alert_email_task.delay(admin_email, user["email"], sos_doc["message"])
+        except Exception:
+            try:
+                from utils.email import send_sos_alert_email
+                send_sos_alert_email(admin_email, user["email"], sos_doc["message"])
+            except Exception as e:
+                print("⚠️ SOS email notification error:", e)
+
     return jsonify({
         "message": "SOS alert sent successfully",
         "sos_id": sos_id
