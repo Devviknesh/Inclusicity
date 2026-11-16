@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  # -------------------- MongoDB Database --------------------
+  mongodb:
+    image: mongo:7.0
+    container_name: inclusicity-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: inclusicity
+    volumes:
+      - mongo_data:/data/db
+
+  # -------------------- Redis Message Broker --------------------
+  redis:
+    image: redis:7.2-alpine
+    container_name: inclusicity-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # -------------------- Flask Backend & Socket.IO --------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inclusicity-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongodb:27017/inclusicity
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-inclusicity-production-jwt-secret-key-32chars}
+      ALLOWED_ORIGINS: "*"
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - uploads_data:/app/uploads
+
+  # -------------------- Celery Background Worker --------------------
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.celery
+    container_name: inclusicity-celery-worker
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      - redis
+      - backend
+
+volumes:
+  mongo_data:
+  redis_data:
+  uploads_data:

@@ -1,0 +1,31 @@
+# ==================================================
+# InclusiCity Celery Worker - Production Dockerfile
+# ==================================================
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Final worker image
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/root/.local/bin:$PATH"
+
+COPY --from=builder /root/.local /root/.local
+COPY . /app
+
+# Run independent persistent Celery worker process
+CMD ["celery", "-A", "celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
