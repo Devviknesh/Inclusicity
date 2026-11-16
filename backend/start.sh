@@ -11,6 +11,12 @@ if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
     python seed_admin.py || echo "⚠️ Admin seeder returned non-zero, continuing startup..."
 fi
 
+# Optional automatic synthetic demo data seeder
+if [ "${SEED_DEMO_DATA:-false}" = "true" ] || [ "${SEED_DEMO_DATA:-false}" = "1" ]; then
+    echo "🌱 Seeding synthetic demonstration data and indexes..."
+    python seed_demo_data.py || echo "⚠️ Demo seeder returned non-zero, continuing startup..."
+fi
+
 # Co-located zero-cost Celery execution
 if [ "${CELERY_TASK_ALWAYS_EAGER:-false}" = "true" ] || [ "${CELERY_TASK_ALWAYS_EAGER:-false}" = "1" ]; then
     echo "ℹ️ Celery operating in in-process EAGER mode (zero background overhead)."
