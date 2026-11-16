@@ -1,19 +1,74 @@
-# Environment
-.env
+# ==========================================
+# InclusiCity Production .gitignore
+# ==========================================
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Frontend Production Builds
+dist/
+dist-ssr/
+frontend/dist/
+build/
+*.local
+
+# Python Environments & Caches
 venv/
-
-# Python
+.venv/
+env/
+*/venv/
+*/.venv/
 __pycache__/
-*.pyc
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Uploads
-backend/uploads/
-uploads/
+# Celery & Redis
+celerybeat-schedule*
+*.dump
 
-# Media
-*.pdf
-*.jpg
-*.jpeg
-*.png
-*.doc
-*.docx
+# Environment Variables & Secrets (Preserve .env.example)
+.env
+.env.*
+*.env
+!.env.example
+backend/.env
+frontend/.env
+
+# Uploads & Sensitive User / KYC Documents
+backend/uploads/*
+!backend/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
+
+# Sensitive Document Types in root or backend
+backend/uploads/**/*.pdf
+backend/uploads/**/*.jpg
+backend/uploads/**/*.jpeg
+backend/uploads/**/*.png
+backend/uploads/**/*.doc
+backend/uploads/**/*.docx
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

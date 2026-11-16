@@ -7,7 +7,7 @@ import {
   ShieldAlert, Clock, Loader2, Shield, FileText, XCircle
 } from 'lucide-react';
 
-const API_BASE = 'http://127.0.0.1:5000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -230,7 +230,7 @@ const AdminDashboard = () => {
                             {helper.documents.government_ids && Object.entries(helper.documents.government_ids).map(([key, doc]) => (
                               doc?.file_url && (
                                 <a key={key}
-                                  href={`${API_BASE}/uploads/${doc.file_url}`}
+                                  href={`${API_BASE}/uploads/${doc.file_url}?token=${encodeURIComponent(localStorage.getItem('token') || '')}`}
                                   target="_blank" rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-2 rounded-xl hover:bg-indigo-100 transition border border-indigo-200/50"
                                 >
@@ -239,7 +239,7 @@ const AdminDashboard = () => {
                               )
                             ))}
                             {helper.documents.address_proof?.file_url && (
-                              <a href={`${API_BASE}/uploads/${helper.documents.address_proof.file_url}`}
+                              <a href={`${API_BASE}/uploads/${helper.documents.address_proof.file_url}?token=${encodeURIComponent(localStorage.getItem('token') || '')}`}
                                 target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-xl hover:bg-emerald-100 transition border border-emerald-200/50"
                               >
@@ -247,7 +247,7 @@ const AdminDashboard = () => {
                               </a>
                             )}
                             {helper.documents.ngo_certificate?.file_url && (
-                              <a href={`${API_BASE}/uploads/${helper.documents.ngo_certificate.file_url}`}
+                              <a href={`${API_BASE}/uploads/${helper.documents.ngo_certificate.file_url}?token=${encodeURIComponent(localStorage.getItem('token') || '')}`}
                                 target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 bg-purple-50 px-3 py-2 rounded-xl hover:bg-purple-100 transition border border-purple-200/50"
                               >
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
                             {Array.isArray(helper.documents.past_experience) && helper.documents.past_experience.map((exp, idx) => (
                               exp?.file_url && (
                                 <a key={idx}
-                                  href={`${API_BASE}/uploads/${exp.file_url}`}
+                                  href={`${API_BASE}/uploads/${exp.file_url}?token=${encodeURIComponent(localStorage.getItem('token') || '')}`}
                                   target="_blank" rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl hover:bg-amber-100 transition border border-amber-200/50"
                                 >

@@ -192,17 +192,16 @@ npm run dev
 
 ### 4. Seed Admin Account
 
-After MongoDB is running, seed the initial admin account using the provided script:
+After MongoDB is running, provision the administrator account using the seed script. Configure `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your `.env` file beforehand (or run the script to generate a secure one-time password):
 
 ```bash
 cd backend
 python seed_admin.py
 ```
 
-**Default Admin Credentials:**
-```
-Email:    admin@inclusicity.com
-Password: admin123
+To reset the administrator password at any time:
+```bash
+python seed_admin.py --reset
 ```
 
 ---
