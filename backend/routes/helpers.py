@@ -68,61 +68,67 @@ def update_helper_profile():
 
     documents = helper.get("documents", {})
 
-    # -------------------------
-    # GOVERNMENT IDS
-    # -------------------------
-    for doc_key in ["aadhaar", "driving_license", "pan"]:
-        if doc_key in files:
-            file = files[doc_key]
+    # Check if KYC uploads are explicitly disabled for ephemeral zero-cost hosting
+    kyc_disabled = os.getenv("DISABLE_KYC_UPLOADS", "false").lower() in ("true", "1")
+    if kyc_disabled and files:
+        # Ignore uploaded binary files and inform the client
+        print("ℹ️ KYC document uploads skipped: DISABLE_KYC_UPLOADS is enabled.")
+    else:
+        # -------------------------
+        # GOVERNMENT IDS
+        # -------------------------
+        for doc_key in ["aadhaar", "driving_license", "pan"]:
+            if doc_key in files:
+                file = files[doc_key]
+                filename = secure_filename(file.filename)
+
+                doc_dir = os.path.join(base_path, "government_ids")
+                os.makedirs(doc_dir, exist_ok=True)
+
+                file_path = os.path.join(doc_dir, filename)
+                file.save(file_path)
+
+                documents.setdefault("government_ids", {})[doc_key] = {
+                    "file_url": f"helpers/{helper_id}/government_ids/{filename}",
+                    "verified": False
+                }
+
+        # -------------------------
+        # ADDRESS PROOF
+        # -------------------------
+        if "address_proof" in files and "address_proof_type" in form:
+            file = files["address_proof"]
             filename = secure_filename(file.filename)
 
-            doc_dir = os.path.join(base_path, "government_ids")
+            doc_dir = os.path.join(base_path, "address_proof")
             os.makedirs(doc_dir, exist_ok=True)
 
             file_path = os.path.join(doc_dir, filename)
             file.save(file_path)
 
-            documents.setdefault("government_ids", {})[doc_key] = {
-                "file_url": f"helpers/{helper_id}/government_ids/{filename}",
+            documents["address_proof"] = {
+                "type": form["address_proof_type"],
+                "file_url": f"helpers/{helper_id}/address_proof/{filename}",
                 "verified": False
             }
 
-    # -------------------------
-    # ADDRESS PROOF
-    # -------------------------
-    if "address_proof" in files and "address_proof_type" in form:
-        file = files["address_proof"]
-        filename = secure_filename(file.filename)
+        # -------------------------
+        # NGO CERTIFICATE
+        # -------------------------
+        if "ngo_certificate" in files:
+            file = files["ngo_certificate"]
+            filename = secure_filename(file.filename)
 
-        doc_dir = os.path.join(base_path, "address_proof")
-        os.makedirs(doc_dir, exist_ok=True)
+            doc_dir = os.path.join(base_path, "ngo_certificate")
+            os.makedirs(doc_dir, exist_ok=True)
 
-        file_path = os.path.join(doc_dir, filename)
-        file.save(file_path)
+            file_path = os.path.join(doc_dir, filename)
+            file.save(file_path)
 
-        documents["address_proof"] = {
-            "type": form["address_proof_type"],
-            "file_url": f"helpers/{helper_id}/address_proof/{filename}",
-            "verified": False
-        }
-
-    # -------------------------
-    # NGO CERTIFICATE
-    # -------------------------
-    if "ngo_certificate" in files:
-        file = files["ngo_certificate"]
-        filename = secure_filename(file.filename)
-
-        doc_dir = os.path.join(base_path, "ngo_certificate")
-        os.makedirs(doc_dir, exist_ok=True)
-
-        file_path = os.path.join(doc_dir, filename)
-        file.save(file_path)
-
-        documents["ngo_certificate"] = {
-            "file_url": f"helpers/{helper_id}/ngo_certificate/{filename}",
-            "verified": False
-        }
+            documents["ngo_certificate"] = {
+                "file_url": f"helpers/{helper_id}/ngo_certificate/{filename}",
+                "verified": False
+            }
 
     # -------------------------
     # PAST EXPERIENCE (OPTIONAL, MULTIPLE)
@@ -199,14 +205,16 @@ def submit_verification():
     if helper.get("verification_status") == "verified":
         return jsonify({"message": "Already verified"}), 200
 
-    # ✅ Validate that documents were actually uploaded
+    # ✅ Validate that documents were actually uploaded (unless KYC uploads are disabled for zero-cost hosting)
+    kyc_disabled = os.getenv("DISABLE_KYC_UPLOADS", "false").lower() in ("true", "1")
     documents = helper.get("documents", {})
     gov_ids = documents.get("government_ids", {})
 
-    if not gov_ids and not documents.get("ngo_certificate") and not documents.get("address_proof"):
-        return jsonify({
-            "error": "Please upload at least one document (government ID, NGO certificate, or address proof) before submitting."
-        }), 400
+    if not kyc_disabled:
+        if not gov_ids and not documents.get("ngo_certificate") and not documents.get("address_proof"):
+            return jsonify({
+                "error": "Please upload at least one document (government ID, NGO certificate, or address proof) before submitting."
+            }), 400
 
     db.helpers.update_one(
         {"_id": helper_id},
